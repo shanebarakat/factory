@@ -6,6 +6,7 @@ __pycache__/
 build/
 dist/
 .venv/
+.modal-venv/
 venv/
 
 # Pinned external tools built by `make tessera`

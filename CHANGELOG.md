@@ -3,6 +3,20 @@
 All notable changes to Factory are recorded here. Versions follow Semantic Versioning while the
 public API is still pre-1.0.
 
+## [Unreleased]
+
+### Added
+
+- **Heavy test runs on Modal.** `harness/modal_exec.sh <cmd>` uploads the working tree (minus
+  `.git` and `node_modules`) to a Modal Sandbox, runs the command there and returns its exit
+  code. The tree digest is checked on both sides and printed into the log, so a receipt names
+  the tree that ran. `FACTORY_REMOTE_EXEC=modal` makes `mutate.sh` and `flake.sh` run every test
+  invocation through it; receipts opt in by prefix. `FACTORY_REMOTE_SETUP` installs
+  dependencies, cached per lockfile in a Modal Volume. Writes made remotely do not come back.
+- **Per-seat lane defaults.** With no `--agent`, `tmux_lane.sh` takes the agent, model and caps
+  from `FACTORY_CODER_*` / `FACTORY_TESTER_*` (`_AGENT`, `_MODEL`, `_SPEND_CAP_USD`,
+  `_USD_PER_HOUR`).
+
 ## [0.8.25] - 2026-10-20
 
 ### Fixed

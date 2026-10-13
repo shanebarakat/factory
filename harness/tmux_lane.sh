@@ -90,6 +90,17 @@ while [ "$#" -gt 0 ]; do
     *) echo "tmux-lane: unknown argument: $1" >&2; exit 64 ;;
   esac
 done
+# With no --agent, the operator's per-seat defaults (FACTORY_CODER_* / FACTORY_TESTER_*) name the
+# agent and fill its model and caps; an explicit --agent never inherits another agent's model.
+SEAT=$(printf %s "$ROLE" | tr a-z A-Z)
+AGENT_VAR="FACTORY_${SEAT}_AGENT" MODEL_VAR="FACTORY_${SEAT}_MODEL"
+CAP_VAR="FACTORY_${SEAT}_SPEND_CAP_USD" RATE_VAR="FACTORY_${SEAT}_USD_PER_HOUR"
+if [ -z "$AGENT_ARG" ] && [ -n "${!AGENT_VAR:-}" ]; then
+  AGENT_ARG="${!AGENT_VAR}"
+  MODEL_ARG="${MODEL_ARG:-${!MODEL_VAR:-}}"
+  SPEND_CAP="${SPEND_CAP:-${!CAP_VAR:-}}"
+  RATE="${RATE:-${!RATE_VAR:-}}"
+fi
 AGENT="${AGENT_ARG:-codex}"
 case "$AGENT" in codex|codex-interactive|codex-ollama|cursor-agent|claude|claude-ollama|agy|muse|prime-agent) ;;
   *) echo "tmux-lane: agent must be codex|codex-interactive|codex-ollama|cursor-agent|claude|claude-ollama|agy|muse|prime-agent" >&2; exit 64 ;;

@@ -130,6 +130,12 @@ if [ -z "${TEST_CMD:-}" ]; then
   echo "  the target's build.test_command declares it, or the Validator selects one." >&2
   exit 64
 fi
+# FACTORY_REMOTE_EXEC=modal runs every test invocation on a Modal Sandbox (modal_exec.sh).
+case "${FACTORY_REMOTE_EXEC:-}" in
+  "") ;;
+  modal) TEST_CMD="$(cd "$(dirname "$0")" && pwd -P)/modal_exec.sh $TEST_CMD" ;;
+  *) echo "mutate: FACTORY_REMOTE_EXEC must be unset or modal" >&2; exit 64 ;;
+esac
 TIMEOUT=$(command -v timeout || command -v gtimeout) || { echo "mutate: needs GNU timeout (macOS: brew install coreutils)" >&2; exit 69; }
 verdict() { ORACLE_VERDICT="$*"; printf '%s: %s\n' "$NAME" "$*"; }
 
