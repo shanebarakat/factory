@@ -40,8 +40,8 @@ import modal
 APP = "factory-exec"
 VOLUME = "factory-exec-cache"
 REMOTE = "/work"
-EXCLUDED = {".git", "node_modules"}
-LOCKFILES = ("pnpm-lock.yaml", "package-lock.json", "yarn.lock", "bun.lockb", "deno.lock")
+EXCLUDED = {".git", "node_modules", "target"}
+LOCKFILES = ("pnpm-lock.yaml", "package-lock.json", "yarn.lock", "bun.lockb", "deno.lock", "Cargo.lock")
 
 
 def tree(root: Path) -> list[Path]:
@@ -136,9 +136,21 @@ def main(argv: list[str]) -> int:
         token = os.environ["FACTORY_PACKAGES_TOKEN"]
         secrets.append(modal.Secret.from_dict({"NODE_AUTH_TOKEN": token, "GH_PACKAGES_TOKEN": token}))
 
-    image = (modal.Image.from_registry(f"node:{node}-bookworm-slim", add_python="3.12")
-             .apt_install("git", "ca-certificates")
-             .run_commands("corepack enable"))
+    # FACTORY_REMOTE_IMAGE swaps the base for non-Node targets, e.g. rust:1.98-bookworm.
+    # Cargo's registry and build output live on the cache volume, keyed like node_modules,
+    # so a mutant rebuilds only what it touched.
+    base = os.environ.get("FACTORY_REMOTE_IMAGE")
+    rust = False
+    if base:
+        image = modal.Image.from_registry(base, add_python="3.12").apt_install("git", "ca-certificates")
+        if base.startswith("rust:"):
+            env.setdefault("CARGO_HOME", "/cache/cargo")
+            env.setdefault("CARGO_TARGET_DIR", f"/cache/target/{key}")
+            rust = True
+    else:
+        image = (modal.Image.from_registry(f"node:{node}-bookworm-slim", add_python="3.12")
+                 .apt_install("git", "ca-certificates")
+                 .run_commands("corepack enable"))
     app = modal.App.lookup(APP, create_if_missing=True)
     sandbox = modal.Sandbox.create(
         app=app, image=image, env=env, secrets=secrets,
@@ -163,6 +175,11 @@ def main(argv: list[str]) -> int:
             f" | cut -d' ' -f1)\" = {local_digest} ]"
             # Install hooks and tests that shell out to git expect a repository.
             " && git init -q"
+            # The shared target dir is keyed only by Cargo.lock, and the archive keeps local
+            # mtimes, so an older tree could look up to date and run a stale binary (seen on
+            # kinbase-oidc-20261020b). Fresh mtimes make cargo rebuild the workspace every time
+            # while dependencies stay cached.
+            + (" && find . -type f -exec touch {} +" if rust else "")
         )
         if run(sandbox, verify, stdin=payload) != 0:
             print(f"modal-exec: remote tree digest differs from local sha256:{local_digest}",
