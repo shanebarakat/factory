@@ -359,8 +359,10 @@ only when you quote it.
    PR body. A lane that finds a
    requirement it cannot meet without breaking a rule raises a specification defect; it does
    not code around the rule.
-6. **The delivered PR body states, per touched rule, why the change complies**, citing the rule
-   by path and id.
+6. **The delivered PR body names a rule only where it matters to the reviewer**: a rule
+   exception, or compliance a reviewer could reasonably doubt, in one line citing the rule by
+   path and id. Routine compliance lives in the run's evidence, not the PR body (see "PR
+   descriptions: concise but thorough").
 
 ## Phase A — The frame (nothing is built until the frame is decided and recorded)
 
@@ -983,14 +985,26 @@ local-only; docs/specs/contracts/types/generated artifacts current; migrations a
 producers, registered consumers, and expected-head contracts; durable knowledge exported and
 committed; deployed digest matches the manifest.
 
-**You own the PR, the merge, and the verdict** — the Coder hands you a branch. The PR body
-states, per touched repo rule, why the change complies (Repo rules, step 6). Where the
+**You own the PR, the merge, and the verdict** — the Coder hands you a branch. Where the
 target repo gates review by label: label `work-in-progress`; **never** add `ready-to-review`
 (humans only).
 
+**PR descriptions: concise but thorough** (founder, 2026-10-24). Write the body a busy
+reviewer of that repo reads in one pass. Before writing it, read the repo's last five merged
+PRs and match their length, sections and title style. The body says: what changed and why
+(the root cause or the removal and its evidence), anything the reviewer must decide or
+accept, known limits and follow-ups, the before-merge checklist, and the Linear link.
+Thorough means every claim a reviewer needs is there and true; concise means nothing else is.
+Leave out: per-rule compliance lists (step 6), GitNexus or tooling transcripts (one line at
+most when the repo requires the check), re-run tables, sandbox or flake narratives, notes on
+what an earlier draft said, and anything only the factory's own audit needs: that belongs in
+the run's evidence. Commit as the founder (`git config user.email` and `user.name` set in the
+clone before the first commit), never as a sandbox's inherited identity.
+
 Every factory PR body carries the fingerprint line `FactoryRun: <task id>` (the Linear ticket,
 e.g. `FactoryRun: CORE-5313`), so factory PRs are countable with
-`gh search prs FactoryRun --match body`. Keep `FactoryRun` one word: search drops punctuation,
+`gh search prs FactoryRun --match body`. Put it inside an HTML comment at the end of the body
+(`<!-- FactoryRun: CORE-5313 -->`): search still matches it and reviewers do not see it. Keep `FactoryRun` one word: search drops punctuation,
 so `Factory-Run` matches every PR that says "factory run". Before the verdict, confirm it is
 present with `gh pr view <n> --json body`; a PR without it is not process-complete.
 Also label every factory PR `Factory`, so they filter exactly with `label:Factory`. Where the

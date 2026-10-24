@@ -274,6 +274,19 @@ Mechanical mutants flip operators and drop statements. They rarely produce the d
 
 A test that raises no confidence in a promise costs run time and reviewer trust, and someone will later "fix" it on the assumption that it mattered.
 
+**T36a. Lean but strong** (founder, 2026-10-24). The tests a PR ships are the fewest that
+fail when a promise breaks, and every one of them must fail when its promise breaks.
+- Budget: shipped test lines about 2x the production lines, or less. Go over only with a
+  stated reason in the PR body.
+- One table-driven test over many near-copies; rows that each guard a distinct case, not
+  padding (no invented inputs that exercise nothing new).
+- No duplicate coverage across files: one test file per unit unless the layers differ.
+- No tombstone tests asserting that deleted code is gone; the deletion is the evidence.
+- No suite-wide configuration changes (time zone, globals, timeouts) to prove one unit; test
+  the unit's own boundary instead.
+- Proof-only tests (mutation carriers, oracle cases, exhaustive combinations) stay in the run's
+  evidence and are not committed.
+
 Deleting a test that no longer adds evidence is healthy. Record why. The deletion must leave every invariant's evidence standing: what the test asserted is still asserted at another layer, or its item was superseded (T3). A regression test stays while the behavior it guards stands.
 
 ---
